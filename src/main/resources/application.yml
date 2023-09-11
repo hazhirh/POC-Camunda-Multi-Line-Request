@@ -1,0 +1,13 @@
+camunda:
+  bpm:
+    admin-user:
+      id: admin
+      password: admin
+      first-name: admin
+      last-name: admin
+    default-number-of-retries: 1
+    default-serialization-format: application/json
+spring:
+  datasource:
+    hikari:
+      jdbc-url: jdbc:h2:mem:0e46334e-9c24-4f80-ae6d-72831c65a409
