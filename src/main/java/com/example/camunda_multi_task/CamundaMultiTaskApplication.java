@@ -105,10 +105,14 @@ class RoleRequestItem implements Serializable {
     Boolean managerApproval = null;
     @EqualsExclude
     @Builder.Default
-    Boolean applicationApproval = null;
+    Boolean applicationOwnerApproval = null;
     @EqualsExclude
     @Builder.Default
-    Boolean roleApproval = null;
+    Boolean roleOwnerApproval = null;
+    @EqualsExclude
+    @Builder.Default
+    Boolean ProductOwnerApproval = null;
+
 }
 
 @Component
@@ -135,32 +139,74 @@ class RequestService {
         execution.setVariable("request", getRequest(execution));
     }
 
-    private RoleRequestItem getRequestItem(DelegateExecution execution, RoleRequestItem requestItem) {
-        RoleRequest roleRequest = getRequest(execution);
-        log.info("getting request item from {}, \n request item id: {}, \n request {}", execution.getProcessInstanceId(), requestItem.getId(), roleRequest);
-        return roleRequest.getItems().stream().filter(i -> i.getId().equals(requestItem.getId())).findAny().get();
-    }
-
-    private RoleRequest getRequest(DelegateExecution execution) {
-        return (RoleRequest) runtimeService.getVariable(execution.getProcessInstanceId(), "request");
-    }
-
     public void managerRejected(DelegateExecution execution, RoleRequestItem requestItem) {
         RoleRequestItem roleRequestItem = getRequestItem(execution, requestItem);
         roleRequestItem.setManagerApproval(false);
         execution.setVariable("request", getRequest(execution));
     }
 
+    public void productManagerApproved(DelegateExecution execution, RoleRequestItem requestItem) {
+        RoleRequestItem roleRequestItem = getRequestItem(execution, requestItem);
+        roleRequestItem.setProductOwnerApproval(true);
+        execution.setVariable("request", getRequest(execution));
+    }
+
+    public void productManagerRejected(DelegateExecution execution, RoleRequestItem requestItem) {
+        RoleRequestItem roleRequestItem = getRequestItem(execution, requestItem);
+        roleRequestItem.setProductOwnerApproval(false);
+        execution.setVariable("request", getRequest(execution));
+    }
+    public void applicationOwnerApproved(DelegateExecution execution, RoleRequestItem requestItem) {
+        RoleRequestItem roleRequestItem = getRequestItem(execution, requestItem);
+        roleRequestItem.setApplicationOwnerApproval(true);
+        execution.setVariable("request", getRequest(execution));
+    }
+
+    public void applicationOwnerRejected(DelegateExecution execution, RoleRequestItem requestItem) {
+        RoleRequestItem roleRequestItem = getRequestItem(execution, requestItem);
+        roleRequestItem.setApplicationOwnerApproval(false);
+        execution.setVariable("request", getRequest(execution));
+    }
+
+    public void roleOwnerApproved(DelegateExecution execution, RoleRequestItem requestItem) {
+        RoleRequestItem roleRequestItem = getRequestItem(execution, requestItem);
+        roleRequestItem.setRoleOwnerApproval(true);
+        execution.setVariable("request", getRequest(execution));
+    }
+
+    public void roleOwnerRejected(DelegateExecution execution, RoleRequestItem requestItem) {
+        RoleRequestItem roleRequestItem = getRequestItem(execution, requestItem);
+        roleRequestItem.setRoleOwnerApproval(false);
+        execution.setVariable("request", getRequest(execution));
+    }
+
     public boolean isManagerConsentReceived(DelegateExecution execution, RoleRequestItem requestItem) {
-        log.info("Checking..., {}", requestItem);
         RoleRequestItem roleRequestItem = getRequestItem(execution, requestItem);
         return roleRequestItem.getManagerApproval() != null;
     }
+    public boolean isRoleOwnerConsentReceived(DelegateExecution execution, RoleRequestItem requestItem) {
+        RoleRequestItem roleRequestItem = getRequestItem(execution, requestItem);
+        return roleRequestItem.getRoleOwnerApproval() != null;
+    }
+    public boolean isAppOwnerConsentReceived(DelegateExecution execution, RoleRequestItem requestItem) {
+        RoleRequestItem roleRequestItem = getRequestItem(execution, requestItem);
+        return roleRequestItem.getApplicationOwnerApproval() != null;
+    }
 
     public boolean isManagerApproved(DelegateExecution execution, RoleRequestItem requestItem) {
-        log.info("Checking..., {}", requestItem);
         RoleRequestItem roleRequestItem = getRequestItem(execution, requestItem);
         return Boolean.TRUE.equals(roleRequestItem.getManagerApproval());
+    }
+    public boolean isApplicationOwnerApproved(DelegateExecution execution, RoleRequestItem requestItem) {
+        RoleRequestItem roleRequestItem = getRequestItem(execution, requestItem);
+        return Boolean.TRUE.equals(roleRequestItem.getApplicationOwnerApproval());
+    }
+    public boolean canProductManagerApprove(DelegateExecution execution, RoleRequestItem requestItem) {
+        RoleRequestItem roleRequestItem = getRequestItem(execution, requestItem);
+        return Boolean.TRUE.equals(roleRequestItem.getManagerApproval())
+                && Boolean.TRUE.equals(roleRequestItem.getRoleOwnerApproval())
+                && Boolean.TRUE.equals(roleRequestItem.getApplicationOwnerApproval())
+                ;
     }
 
     public Map<String, List<RoleRequestItem>> determineManagers(DelegateExecution execution) {
@@ -180,6 +226,15 @@ class RequestService {
         System.out.println("Hello!");
     }
 
+    private RoleRequestItem getRequestItem(DelegateExecution execution, RoleRequestItem requestItem) {
+        RoleRequest roleRequest = getRequest(execution);
+        log.info("getting request item from {}, \n request item id: {}, \n request {}", execution.getProcessInstanceId(), requestItem.getId(), roleRequest);
+        return roleRequest.getItems().stream().filter(i -> i.getId().equals(requestItem.getId())).findAny().get();
+    }
+
+    private RoleRequest getRequest(DelegateExecution execution) {
+        return (RoleRequest) runtimeService.getVariable(execution.getProcessInstanceId(), "request");
+    }
 //    public Map<String, List<RoleRequestItem>> determineApplications(DelegateExecution execution) {
 //        RoleRequest roleRequest = (RoleRequest) execution.getVariable("request");
 //        Map<String, List<RoleRequestItem>> applications = new HashMap<>();
